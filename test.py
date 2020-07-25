@@ -7,6 +7,7 @@ from src.broker import Broker
 from src.portfolio import Portfolio
 from src.wallstreet import get
 
+
 securities = get(['spy', 'cost'], outputsize='full')
 
 def step(state):
