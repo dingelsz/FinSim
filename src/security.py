@@ -83,14 +83,20 @@ class Securities:
 		self._collection = {}
 		self._dates = []
 		
-	def add(self, securities):
-		if not isinstance(securities, list):
-			securities = [securities]
+	def add(self, id, security):
+		if not isinstance(security, Security):
+			raise SecuritiesError('Can only add a Security')
 		
-		for s in securities:
-			self._collection[s.id] = s
-			self._dates.extend(s.dates)
-			self._dates = sorted(list(set(self._dates)))
+		self._collection[id] = security
+		self._dates.extend(security.dates)
+		self._dates =sorted(list(set(self._dates)))
+		
+	def merge(self, securities):
+		if not isinstance(securities, Securities):
+			raise SecuritiesError('Can only merge other Securities with a Securities')
+		
+		for id in securities:
+			self.add(id, securities.get(id))
 		
 	def get(self, id):
 		if id not in self._collection:
@@ -108,7 +114,7 @@ class Securities:
 		return self._dates
 		
 	def __iter__(self):
-		return iter(self._collection.keys())
+		return iter(self._collection)
 		
 	def __repr__(self):
 		return f'Securities: {list(iter(self))}'

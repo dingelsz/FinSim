@@ -8,34 +8,45 @@ from src.portfolio import Portfolio
 from src.wallstreet import get
 
 
-securities = get(['spy', 'cost'], outputsize='full')
-
 def step(state):
 	broker = state.broker
-	portfolio = brok
+	portfolio = broker.get('zach')
+	spy = broker.get('spy')
 	
+	if portfolio.cash > broker.quote('aapl'):
+		broker.order(portfolio, 'aapl', 1)
+		
+	if spy.cash != 0:
+		val = broker.quote('spy')
+		broker.order(spy, 'spy', spy.cash / val)
 	
 	return state
 	
 simulation = SecurityContext(
-	securities, 
 	step, 
-	portfolio = Portfolio(1000),
-	portfolio_history = []
+	# these go in state
+	portfolios = {
+		'zach': Portfolio(1000),
+		'spy':  Portfolio(1000)
+		}
 )
 
 simulation.run()
 
 
 dates = simulation.clock.times
-history = [val for s, val in simulation.state.portfolio_history]
+zach = simulation.state.broker.get('zach')._history
+spy = simulation.state.broker.get('spy')._history
 
 fig, ax = plt.subplots()
 fig.set_size_inches(20, 8)
 
-ax.plot(dates, history, 'b')
+ax.plot(dates, spy, 'b')
+ax.plot(dates, zach, 'r')
 
 myFmt = DateFormatter("%Y")
 ax.xaxis.set_major_formatter(myFmt)
+
+plt.legend(['SPY', 'Zach'])
 
 plt.show()

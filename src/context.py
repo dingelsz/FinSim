@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 from .clock import IterClock
 from .broker import Broker
+from .market import Market
 
 
 class StateError: Exception
@@ -92,32 +93,39 @@ class HiddenContext(Context):
 
 class SecurityContext(HiddenContext):
 	
-	def __init__(self, securities, process, **kargs):
-		self._securities = securities
-		self._market = {}
+	def __init__(self, process, portfolios, **kargs):
+		self._market = Market()
+		self._market.load('spy')
+		
 		self._broker = Broker(self._market)
+		for id, p in portfolios.items():
+			self._broker.add(id, p)
+		
 		state = State(**kargs)
 		state.broker = self._broker
 		
 		self.setup(
-			clock = IterClock(securities.dates),
+			clock = IterClock(self._market.dates),
 			initial_state = state, 
 			process = process
 		)
 		
 	def _pre_step(self):
-		self._broker._market = self._securities.get_date(self._clock.time)
+		self._market._time = self.clock.time
+		self._broker._transactions = []
 		
 	def _post_step(self):
-		portfolio = self._state.portfolio.portfolio
-		sec = self._securities.get_date(
-			self._clock.time
+		self._broker._complete_transactions(
+			self.clock.time
 		)
-		value = Broker.calc_value(
-			portfolio, sec
-		)
-		self._state.portfolio_history.append(
-			(portfolio, value)
-		)
+		
+		for id in self._broker:
+			portfolio = self._broker.get(id)
+		
+			value = self._broker.calc_value(
+				portfolio, 
+				self._clock.time
+			)
+			portfolio._history.append(value)
 			
 		

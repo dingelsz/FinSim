@@ -19,7 +19,6 @@ class Data:
 		table = [row.split(',') for row in rows]
 		header, *table = table
 		table = np.array(table)
-		
 		return Data.load_table(table, header)
 		
 	def __init__(self):

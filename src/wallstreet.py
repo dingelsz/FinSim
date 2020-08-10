@@ -10,7 +10,7 @@ def _build_url(**kargs):
 	query = {
 	'function': 'TIME_SERIES_DAILY',
 	'symbol': 'SPY',
-	'outputsize': 'compact',
+	'outputsize': 'full',
 	'datatype': 'json',
 	'apikey': 'JPIO2GNGBMFRLGMN'
 	}
@@ -27,7 +27,15 @@ def _get_symbol(symbol, **kargs):
 	kargs['symbol'] = symbol
 	kargs['datatype'] = 'csv'
 	req = _request(**kargs)
-	data = Data.load_csv(req.text)
+	# Reverse dates to past to present
+	text = req.text
+	header, *text = text.split()
+	text = '\n'.join(
+		[l for l in text[::-1]]
+	)
+	csv_str = f'{header}\n{text}'
+
+	data = Data.load_csv(csv_str)
 	return Security(symbol, data) 
 	
 def get(symbols, **kargs):
@@ -37,32 +45,9 @@ def get(symbols, **kargs):
 	result = Securities()
 	for symbol in symbols:
 		kargs['symbol'] = symbol
-		result.add(_get_symbol(**kargs))
+		result.add(
+			id=symbol,
+			security=_get_symbol(**kargs)
+		)
 	return result
 	
-	
-	
-	
-	
-	
-	
-	
-def _parse_data(data):
-	# Parse the data into a matrix
-	data = data['Time Series (Daily)']
-	
-	# Parse data into columns - by date
-	dates = sorted(list(data.keys()))
-	tmp = defaultdict(list)
-	for date in dates:
-		tmp['date'].append(date)
-		for col_full in data[date]:
-			col_name = col_full.split()[-1]
-			info = data[date][col_full]
-			info = float(info)
-			tmp[col_name].append(info)
-			
-	tmp = {k: np.array(tmp[k]) for k in tmp}
-	
-	tmp['date'] = tmp['date'].astypet(np.datetime64).astype(datetime)
-	return tmp
